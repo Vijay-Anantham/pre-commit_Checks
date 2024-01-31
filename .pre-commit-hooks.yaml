@@ -2,7 +2,7 @@
     name: check filenaming in the repo
     description: Check for spaces in filename and check if it follows a naming convention.
     entry: ./hooks/filename.sh
-    language: "python"
+    language: "script"
 
 -   id: check-version
     name: check language version in the commit
