@@ -15,8 +15,6 @@ current_python_version=$(python3 -c 'import sys; print(".".join(map(str, sys.ver
 
 # Compare the current and required Python versions.
 if [ "$(printf '%s\n' "$required_python_version" "$current_python_version" | sort -V | head -n1)" != "$required_python_version" ]; then 
-    # echo $current_python_version
-    # echo \n
     echo "Your Python version is not compatible. Please use Python $required_python_version or higher."
     exit 1
 fi
