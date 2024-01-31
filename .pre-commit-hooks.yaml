@@ -1,7 +1,7 @@
 -   id: check-filename
     name: check filenaming in the repo
     description: Check for spaces in filename and check if it follows a naming convention.
-    entry: ./hooks/filename.py
+    entry: ./hooks/filename.sh
     language: "python"
 
 -   id: check-version
