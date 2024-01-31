@@ -23,9 +23,9 @@ do
     fi
 
     # If the base name of the file does not match the pattern
-    if [[ ! $base =~ $pattern ]]
+    if [[ $file == *"-"* ]]; 
     then
-        echo "Error: File '$file' does not follow the naming convention."
+        echo "Error: File $file has malformed name formatting. convention do not support '-' in names"
         exit 1
     fi
 done
