@@ -8,4 +8,4 @@
     name: check language version in the commit
     description: Check if the language version follow a particular version
     entry: run_check_pytho_version.sh
-    language: "script"
+    language: script
