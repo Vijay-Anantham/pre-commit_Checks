@@ -7,5 +7,9 @@ pipeline {
                 echo 'Hello, World!'
             }
         }
+
+        stage('Version check'){
+            sh 'python --version'
+        }
     }
 }
