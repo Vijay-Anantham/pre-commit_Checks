@@ -1,17 +1,29 @@
 pipeline {
-    agent any 
+    agent any
 
     stages {
-        stage('Hello') {
+        stage('Checkout') {
             steps {
-                echo 'Hello, World!'
+                // Checkout code from version control
+                git 'https://github.com/Vijay-Anantham/pre-commit_Checks.git'
             }
         }
-
-        stage('Version check'){
-            steps{
-                sh 'python3 --version'
+        stage('Setup Environment') {
+            steps {
+                sh 'pip install -r requirements.txt'
             }
+        }
+        stage('Execute Script') {
+            steps {
+                sh 'python3 ./service/dummy.py'
+            }
+        }
+    }
+    
+    post {
+        failure {
+            // Send notification if build fails
+            mail to: 'vijayanantham143@gmail.com', subject: 'Build failed', body: 'Check Jenkins for details.'
         }
     }
 }
