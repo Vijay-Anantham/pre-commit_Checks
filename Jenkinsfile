@@ -1,6 +1,7 @@
 pipeline {
-    agent any
-
+    agent {
+    docker { image 'python:latest' }
+    }
     stages {
         stage('Checkout') {
             steps {
@@ -15,7 +16,7 @@ pipeline {
         }
         stage('Execute Script') {
             steps {
-                sh 'python3 ./service/dummy.py'
+                sh 'python3 dummy.py'
             }
         }
     }
