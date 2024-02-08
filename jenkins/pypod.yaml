@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: python-app
+  namespace: devops-tools
+spec:
+  containers:
+  - name: python-app
+    image: python:3.8-slim-buster
+    command: ["python", "-c"]
+    args: ["print('Hello, World!')"]
