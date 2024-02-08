@@ -5,16 +5,17 @@ pipeline {
     //     yamlFile 'kaniko-builder.yaml'
     //     }
     // }
-    agent {
-        docker { image 'python' }
-    }
+    // agent {
+    //     docker { image 'python' }
+    // }
+    agent any
     stages {
-        stage('Checkout') {
-            steps {
-                // Checkout code from version control
-                git 'https://github.com/Vijay-Anantham/pre-commit_Checks.git'
-            }
-        }
+        // stage('Checkout') {
+        //     steps {
+        //         // Checkout code from version control
+        //         git 'https://github.com/Vijay-Anantham/pre-commit_Checks.git'
+        //     }
+        // }
         stage('Setup Environment') {
             steps {
                 sh 'pip install -r requirements.txt'
