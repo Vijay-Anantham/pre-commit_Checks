@@ -11,6 +11,7 @@ COPY . /app
 RUN apt-get update && apt-get install -y \
     curl \
     vim \
+    openjdk-8-jdk \
     pip
 
 # Make port 80 available to the world outside this container
