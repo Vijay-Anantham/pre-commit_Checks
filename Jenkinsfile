@@ -1,12 +1,12 @@
-podTemplate(containers: [
-    containerTemplate(
-        name: 'python', 
-        image: 'python:latest', 
-        command: 'sleep', 
-        args: '30d')
-  ])
 
 pipeline {
+    podTemplate(containers: [
+        containerTemplate(
+            name: 'python', 
+            image: 'python:latest', 
+            command: 'sleep', 
+            args: '30d')
+    ])
     // agent {
     //     kubernetes {
     //     yamlFile 'kaniko-builder.yaml'
