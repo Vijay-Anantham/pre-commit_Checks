@@ -6,9 +6,7 @@ pipeline {
     //     }
     // }
     agent {
-        kubernetes {
-        yamlFile 'kaniko-builder.yaml'
-        }
+        docker { image 'python' }
     }
     stages {
         stage('Checkout') {
