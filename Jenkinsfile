@@ -1,18 +1,38 @@
 pipeline {
-    agent none
+    // podg
+    // agent {
+    //     kubernetes {
+    //     yamlFile 'kaniko-builder.yaml'
+    //     }
+    // }
+    agent {
+        kubernetes {
+        yamlFile 'kaniko-builder.yaml'
+        }
+    }
     stages {
-        stage('Build') {
-            agent {
-                docker {
-                    image 'python:3-alpine'
-                }
-            }
+        stage('Checkout') {
             steps {
-                sh 'virtualenv venv --distribute'
-                sh 'source venv/bin/activate '
-                sh 'pip install --user -r requirements.txt'
-                sh 'python3 ./service/dummy.py'
+                // Checkout code from version control
+                git 'https://github.com/Vijay-Anantham/pre-commit_Checks.git'
             }
+        }
+        stage('Setup Environment') {
+            steps {
+                sh 'pip install -r requirements.txt'
+            }
+        }
+        stage('Execute Script') {
+            steps {
+                sh 'python3 dummy.py'
+            }
+        }
+    }
+    
+    post {
+        failure {
+            // Send notification if build fails
+            mail to: 'vijayanantham143@gmail.com', subject: 'Build failed', body: 'Check Jenkins for details.'
         }
     }
 }
