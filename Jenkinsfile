@@ -1,5 +1,9 @@
 pipeline {
-    agent any
+    agent {
+        kubernetes {
+        yamlFile 'kaniko-builder.yaml'
+        }
+    }
     stages {
         stage('Checkout') {
             steps {
