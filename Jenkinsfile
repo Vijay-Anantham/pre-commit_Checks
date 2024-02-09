@@ -68,7 +68,7 @@ def paramDefaults = [
         'ES_PROXY_SERVICE_IMAGE':'default',
         'CERT_POLLER_IMAGE':'default',
     ]
-def pipelineParams = paramDefaults + specifiedParams
+def pipelineParams = paramDefaults
 
 pipeline {
 
