@@ -1,21 +1,9 @@
 pipeline {
-    // podg
-    // agent {
-    //     kubernetes {
-    //     yamlFile 'kaniko-builder.yaml'
-    //     }
-    // }
-    // agent {
-    //     docker { image 'python' }
-    // }
-    agent any
+    agent {
+        docker { image 'python' }
+    }
+    // agent any
     stages {
-        // stage('Checkout') {
-        //     steps {
-        //         // Checkout code from version control
-        //         git 'https://github.com/Vijay-Anantham/pre-commit_Checks.git'
-        //     }
-        // }
         stage('Setup Environment') {
             steps {
                 sh 'pip install -r requirements.txt'
@@ -23,15 +11,9 @@ pipeline {
         }
         stage('Execute Script') {
             steps {
-                sh 'python3 dummy.py'
+                sh 'python3 --version'
             }
         }
     }
-    
-    post {
-        failure {
-            // Send notification if build fails
-            mail to: 'vijayanantham143@gmail.com', subject: 'Build failed', body: 'Check Jenkins for details.'
-        }
-    }
+
 }
