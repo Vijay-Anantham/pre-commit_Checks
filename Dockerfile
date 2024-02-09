@@ -4,15 +4,15 @@ FROM ubuntu:latest
 # Set the working directory in the container to /app
 WORKDIR /app
 
-# Copy the current directory contents into the container at /app
-COPY . /app
-
 # Update and install basic Linux utilities
 RUN apt-get update && apt-get install -y \
     curl \
     vim \
     openjdk-8-jdk \
-    pip
+    pip \
+    python3
+
+RUN python3 --version
 
 # Make port 80 available to the world outside this container
 EXPOSE 2468

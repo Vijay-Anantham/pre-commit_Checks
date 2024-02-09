@@ -76,10 +76,30 @@ pipeline {
     }
 
     agent {
-        docker { image 'python' }
+        docker { image 'dockerdaemon0901/jenkinworker:v1' }
     }
+
     // agent any
     stages {
+
+        stage('Return early branch indexing') {
+                when {
+                    allOf {
+                        triggeredBy cause: 'BranchIndexingCause'
+                        not {
+                            changeRequest()
+                        }
+                    }
+                }
+                steps {
+                    script {
+                        echo "Branch indexing triggered, returning early"
+                        currentBuild.result = 'SUCCESS'
+                        error "Branch indexing triggered, returning early"
+                    }
+                }
+        }
+
         stage('Check version') {
             steps {
                 sh 'python3 --version'
