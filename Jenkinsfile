@@ -4,12 +4,7 @@ pipeline {
     }
     // agent any
     stages {
-        stage('Setup Environment') {
-            steps {
-                sh 'pip install -r requirements.txt'
-            }
-        }
-        stage('Execute Script') {
+        stage('Check version') {
             steps {
                 sh 'python3 --version'
             }
