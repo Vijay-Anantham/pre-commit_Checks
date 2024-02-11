@@ -100,16 +100,6 @@ spec:
           value: 1
         - name: DOCKER_HOST
           value: tcp://localhost:2376
-        - name: GEN_USER
-          valueFrom:
-            secretKeyRef:
-              name: dockerhub
-              key: username
-        - name: GEN_PASS
-          valueFrom:
-            secretKeyRef:
-              name: dockerhub
-              key: password
       volumeMounts:
         - name: dind-certs
           mountPath: /certs/client
