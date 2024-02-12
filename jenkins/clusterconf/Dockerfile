@@ -1,21 +1,24 @@
-# Use an official Ubuntu runtime as a parent image
-FROM ubuntu:latest
+FROM jenkins/inbound-agent:latest
 
-# Set the working directory in the container to /app
-WORKDIR /app
+# Set user to root to install additional tools
+USER root
 
-# Update and install basic Linux utilities
+# Install desired tools, utilities, and dependencies
 RUN apt-get update && apt-get install -y \
+    git \
     curl \
-    vim \
-    openjdk-8-jdk \
-    pip \
-    python3
+    zip \
+    # Add any other tools you might need for your builds, for example:
+    # build-essential \
+    python3 \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN python3 --version
+# If you need to install Docker (to run Docker commands within this agent, which requires Docker-out-of-Docker setup):
+# RUN curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh
 
-# Make port 80 available to the world outside this container
-EXPOSE 2468
+# Drop back to the Jenkins user
+USER jenkins
 
-# Run a basic command when the container launches
-CMD ["echo", "The docker worker is running"]
+# Set the entrypoint (optional, as the base image already includes an entrypoint)
+ENTRYPOINT ["jenkins-agent"]
