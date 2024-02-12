@@ -124,14 +124,14 @@ pipeline {
             }
         }
 
+
+        // Try building and publishing the image using a kniko container
         stage('Run Command in Kaniko Container') {
-            agent {
-                docker {
-                    image 'gcr.io/kaniko-project/executor:v1.18.0-debug'
-                }
-            }
             steps {
-                sh 'echo "Hello Jenkins"'
+               docker.image('gcr.io/kaniko-project/executor:latest').inside("--env DOCKER_CONFIG=/kaniko/.docker") {
+                        // sh "cat ${pipelineParams.dockerfile} | /kaniko/executor --dockerfile=/dev/stdin --context=/workspace --destination=${IMAGE_NAME}"
+                        sh 'echo "Heyy"'
+                    }
             }
         }
 
@@ -140,6 +140,7 @@ pipeline {
             agent {
                 docker {
                     image 'gcr.io/kaniko-project/executor:v1.18.0-debug'
+                    args '-it --entrypoint=/bin/bash'
                     // args '-v /kaniko/.docker/:/kaniko/.docker/ -v /kaniko/gittoken:/kaniko/gittoken'
                 }
             }
