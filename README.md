@@ -13,6 +13,14 @@ docker run --restart=on-failure --detach \
   --volume jenkins-docker-certs:/certs/client:ro \
   --privileged myjenks
 
+docker run --restart=on-failure --detach \
+  --network jenkins --env DOCKER_HOST=tcp://docker:2376 \
+  --env DOCKER_CERT_PATH=/certs/client --env DOCKER_TLS_VERIFY=1 \
+  --publish 8080:8080 --publish 50000:50000 \
+  --volume /var/jenkins_home:/var/jenkins_home \
+  --volume jenkins-docker-certs:/certs/client:ro \
+  --privileged myjenks
+
 
 ## Simple docker dind container
 docker run --name jenkins-docker --rm --detach \
