@@ -132,14 +132,6 @@ spec:
       emptyDir: {}
     - name: workspace
       emptyDir: {}
-    - name: gittoken
-      secret:
-        secretName: gittoken
-        defaultMode: 384
-    - name: kaniko-secret
-      secret:
-        secretName: kanikoharbor
-        defaultMode: 384
 """
             }
         }
