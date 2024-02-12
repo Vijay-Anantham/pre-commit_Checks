@@ -76,6 +76,11 @@ pipeline {
             timeout(time: pipelineParams.timeout, unit: 'HOURS')
     }
 
+    environment {
+        REGISTRY = 'hub.docker.com/dockerdaemon0901'
+        NSO_VERSION = '5.7.2'
+    }
+
     agent {
         // docker { image 'dockerdaemon0901/jenkinworker:v1' }
         kubernetes {
@@ -175,11 +180,81 @@ spec:
                 }
         }
 
-        stage('Check version') {
-            steps {
-                sh 'python3 --version'
+        stage('Build image Kaniko') {
+                agent {
+                    kubernetes {
+                        cloud "${pipelineParams.cloud}"
+                        defaultContainer 'kaniko'
+                        yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+    - name: kaniko
+      image: gcr.io/kaniko-project/executor:v1.18.0-debug
+      imagePullPolicy: IfNotPresent
+      command:
+        - /busybox/sleep
+        - infinity
+      tty: true
+      env:
+      volumeMounts:
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker/
+        - name: gittoken
+          mountPath: /kaniko/gittoken
+  volumes:
+    - name: gittoken
+      secret:
+        secretName: github-credentials
+        defaultMode: 384
+    - name: kaniko-secret
+      secret:
+        secretName: docker-credentials
+        defaultMode: 256
+"""
+                    }
+                }
+                steps {
+                    container(name: 'kaniko', shell: '/busybox/sh') {
+                        echo 'Build image'
+                        script {
+                            pipelineParams.target_to_image_suffix.each{target, suffix ->
+                                extra_args = ""
+                                if (target != "") {
+                                    extra_args = extra_args + " --target=${target}"
+                                }
+                                if (pipelineParams.push_dockerhub) {
+                                    extra_args = extra_args + " --destination=$DOCKERHUB_URL/$IMAGE_NAME:$BRANCH_TAG" + suffix
+                                    extra_args = extra_args + " --destination $DOCKERHUB_URL/$IMAGE_NAME:$TEST_TAG" + suffix
+                                }
+
+                                retry(pipelineParams.NUM_BUILD_IMAGES_RETRIES) {
+                                    withEnv(['PATH+EXTRA=/busybox']) {
+                                        sh """#!/busybox/sh
+                                        echo "################################################################################"
+                                        echo "#                         Build Image - Kaniko                                 #"
+                                        echo "################################################################################"
+                                        cp -v /kaniko/gittoken/token /kaniko/token
+                                        chmod -v 777 /kaniko/token
+                                        /kaniko/executor \
+                                            --context `pwd`${pipelineParams.build_dir} \
+                                            --dockerfile ${pipelineParams.dockerfile} \
+                                            --build-arg NSO_VERSION=$NSO_VERSION \
+                                            --cache=${pipelineParams.kaniko_cache} \
+                                            --cache-ttl=4000h \
+                                            --ignore-path=/busybox \
+                                            --snapshot-mode=full \
+                                            --log-format=color \
+                                            && mkdir -p /workspace
+                                        """
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
-        }
     }
 
 }
