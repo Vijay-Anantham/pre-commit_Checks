@@ -4,7 +4,11 @@ pipeline {
       cloud 'anthos-ci'
       defaultContainer 'kaniko'
       yaml '''
+        apiVersion: v1
         kind: Pod
+        metadata:
+          labels:
+            name: jnlp
         spec:
           containers:
           - name: kaniko
