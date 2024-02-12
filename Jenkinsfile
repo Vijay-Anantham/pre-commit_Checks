@@ -118,7 +118,7 @@ spec:
         - name: logs
           mountPath: /home/jenkins/logs
     - name: dind
-      image: dockerhub.cisco.com/docker.io/docker:24.0.6-dind
+      image: docker:dind
       imagePullPolicy: IfNotPresent
       securityContext:
         privileged: true
