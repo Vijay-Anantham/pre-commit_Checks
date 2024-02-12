@@ -123,6 +123,18 @@ pipeline {
                 }
             }
         }
+
+        stage('Run Command in Kaniko Container') {
+            agent {
+                docker {
+                    image 'gcr.io/kaniko-project/executor:v1.18.0-debug'
+                }
+            }
+            steps {
+                sh 'echo "Hello Jenkins"'
+            }
+        }
+
         
         stage('Build image Kaniko') {
             agent {
