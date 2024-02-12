@@ -85,7 +85,6 @@ pipeline {
 apiVersion: v1
 kind: Pod
 spec:
-  serviceAccountName: laasv2-e2e
   containers:
     - name: jnlp
       image: ${pipelineParams.jenkins_client_image}
