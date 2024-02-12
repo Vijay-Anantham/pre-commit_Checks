@@ -7,8 +7,7 @@ pipeline {
         apiVersion: v1
         kind: Pod
         metadata:
-          labels:
-            name: jnlp
+          name: jnlp-kaniko
         spec:
           containers:
             - name: kaniko
