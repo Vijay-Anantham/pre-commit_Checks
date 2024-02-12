@@ -128,7 +128,7 @@ pipeline {
             agent {
                 docker {
                     image 'gcr.io/kaniko-project/executor:v1.18.0-debug'
-                    args '-v /kaniko/.docker/:/kaniko/.docker/ -v /kaniko/gittoken:/kaniko/gittoken'
+                    // args '-v /kaniko/.docker/:/kaniko/.docker/ -v /kaniko/gittoken:/kaniko/gittoken'
                 }
             }
             steps {
