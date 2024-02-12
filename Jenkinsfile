@@ -144,31 +144,34 @@ pipeline {
                 }
             }
             steps {
-                script {
-                    // Assuming 'pipelineParams' and the necessary environment variables are available
-                    def extraArgs = ""
-                    if (pipelineParams.push_dockerhub) {
-                        extraArgs += " --destination=$DOCKERHUB_URL/$IMAGE_NAME:$BRANCH_TAG"
-                        extraArgs += " --destination $DOCKERHUB_URL/$IMAGE_NAME:$TEST_TAG"
-                    }
-                    sh """
-                    echo "################################################################################"
-                    echo "#                         Build Image - Kaniko                                 #"
-                    echo "################################################################################"
-                    /kaniko/executor \
-                        --context `pwd`${pipelineParams.build_dir} \
-                        --dockerfile ${pipelineParams.dockerfile} \
-                        --destination=$REGISTRY/$IMAGE_NAME:$BRANCH_TAG${suffix} \
-                        --destination $REGISTRY/$IMAGE_NAME:$TEST_TAG${suffix} \
-                        --cache=${pipelineParams.kaniko_cache} \
-                        --cache-ttl=4h \
-                        --ignore-path=/busybox \
-                        --snapshot-mode=full \
-                        --log-format=color \
-                        --push-retry=3 \
-                        --cleanup ${extra_args}
-                    """
+                script{
+                    sh "echo Heyyy"
                 }
+                // script {
+                //     // Assuming 'pipelineParams' and the necessary environment variables are available
+                //     def extraArgs = ""
+                //     if (pipelineParams.push_dockerhub) {
+                //         extraArgs += " --destination=$DOCKERHUB_URL/$IMAGE_NAME:$BRANCH_TAG"
+                //         extraArgs += " --destination $DOCKERHUB_URL/$IMAGE_NAME:$TEST_TAG"
+                //     }
+                //     sh """
+                //     echo "################################################################################"
+                //     echo "#                         Build Image - Kaniko                                 #"
+                //     echo "################################################################################"
+                //     /kaniko/executor \
+                //         --context `pwd`${pipelineParams.build_dir} \
+                //         --dockerfile ${pipelineParams.dockerfile} \
+                //         --destination=$REGISTRY/$IMAGE_NAME:$BRANCH_TAG${suffix} \
+                //         --destination $REGISTRY/$IMAGE_NAME:$TEST_TAG${suffix} \
+                //         --cache=${pipelineParams.kaniko_cache} \
+                //         --cache-ttl=4h \
+                //         --ignore-path=/busybox \
+                //         --snapshot-mode=full \
+                //         --log-format=color \
+                //         --push-retry=3 \
+                //         --cleanup ${extra_args}
+                //     """
+                // }
             }
         }
     }
