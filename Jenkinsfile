@@ -103,12 +103,12 @@ spec:
         - name: GEN_USER
           valueFrom:
             secretKeyRef:
-              name: dockerhub
+              name: docker-credentials
               key: username
         - name: GEN_PASS
           valueFrom:
             secretKeyRef:
-              name: dockerhub
+              name: docker-credentials
               key: password
       volumeMounts:
         - name: dind-certs
@@ -148,7 +148,7 @@ spec:
         defaultMode: 384
     - name: kaniko-secret
       secret:
-        secretName: dockerhub-credentials
+        secretName: docker-credentials
         defaultMode: 384
 """
             }
