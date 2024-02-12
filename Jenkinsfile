@@ -85,70 +85,10 @@ pipeline {
         TEST_TAG = "${env.GIT_COMMIT}"
         IMAGE_NAME = "${pipelineParams.image_name}"
         REGISTRY = 'docker.io/'
-
     }
 
-    // agent {
-        // docker { image 'dockerdaemon0901/jenkinworker:v1' }
-//         kubernetes {
-//             cloud "${pipelineParams.cloud}"
-//             defaultContainer 'jnlp'
-//             yaml """
-// apiVersion: v1
-// kind: Pod
-// spec:
-//   containers:
-//     - name: jnlp
-//       image: ${pipelineParams.jenkins_client_image}
-//       imagePullPolicy: IfNotPresent
-//       stdin: true
-//       tty: true
-//       env:
-//         - name: JENKINS_AGENT_WORKDIR
-//           value: /home/jenkins/agent
-//         - name: DOCKER_CERT_PATH
-//           value: /certs/client
-//         - name: DOCKER_TLS_VERIFY
-//           value: 1
-//         - name: DOCKER_HOST
-//           value: tcp://localhost:2376
-//       volumeMounts:
-//         - name: dind-certs
-//           mountPath: /certs/client
-//         - name: workspace
-//           mountPath: /home/jenkins/agent
-//         - name: logs
-//           mountPath: /home/jenkins/logs
-//     - name: dind
-//       image: docker:dind
-//       imagePullPolicy: IfNotPresent
-//       securityContext:
-//         privileged: true
-//       resources:
-//         requests:
-//           ephemeral-storage: "4Gi"
-//       env:
-//         - name: DOCKER_TLS_CERTDIR
-//           value: /certs
-//       volumeMounts:
-//         - name: dind-storage
-//           mountPath: /var/lib/docker
-//         - name: dind-certs
-//           mountPath: /certs/client
-//   volumes:
-//     - name: dind-storage
-//       emptyDir: {}
-//     - name: dind-certs
-//       emptyDir: {}
-//     - name: logs
-//       emptyDir: {}
-//     - name: workspace
-//       emptyDir: {}
-// """
-//             }
-        // }
-
     agent any
+    
     stages {
 
         stage('Return early branch indexing') {
@@ -170,9 +110,17 @@ pipeline {
         }
 
         stage('check version'){
-            agent {docker { image 'dockerdaemon0901/jenkinworker:v1' }}
+            agent {
+                docker { image 'dockerdaemon0901/jenkinworker:v1' }
+                }
             steps {
-                sh 'python3 --version'
+                script {
+                    // Print some information about the Docker image
+                    sh 'docker info'
+
+                    // Check Python version
+                    sh 'python3 --version'
+                }
             }
         }
         
