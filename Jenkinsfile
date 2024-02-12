@@ -175,4 +175,15 @@ pipeline {
             }
         }
     }
+    post {
+        always {
+            // Cleanup steps that should always run regardless of the build outcome
+            script {
+                echo "Performing cache cleanup..."
+                // Insert your cache cleanup commands here
+                // For example, if you're using a workspace on the Jenkins agent, you can clean it up:
+                cleanWs()
+            }
+        }
+    }
 }
