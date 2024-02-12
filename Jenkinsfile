@@ -37,7 +37,7 @@ pipeline {
     stage('Build with Kaniko') {
       steps {
         git 'https://github.com/jenkinsci/docker-inbound-agent.git'
-        sh '/kaniko/executor -f `pwd`/Dockerfile -c `pwd` --insecure --skip-tls-verify --cache=true --destination=mydockerregistry:5000/myorg/myimage'
+        sh '/kaniko/executor -f `pwd`/Dockerfile -c `pwd` --insecure --skip-tls-verify --cache=true --destination=docker.io/dockerdaemon0901/jenkinworker:v12'
       }
     }
   }
