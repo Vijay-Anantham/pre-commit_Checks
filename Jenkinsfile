@@ -116,6 +116,15 @@ spec:
           mountPath: /home/jenkins/agent
         - name: logs
           mountPath: /home/jenkins/logs
+  volumes:
+    - name: dind-storage
+      emptyDir: {}
+    - name: dind-certs
+      emptyDir: {}
+    - name: logs
+      emptyDir: {}
+    - name: workspace
+      emptyDir: {}
 """
             }
         }
