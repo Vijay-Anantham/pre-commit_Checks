@@ -1,6 +1,6 @@
 def paramDefaults = [
         'cloud': 'anthos-ci',
-        'image_name': 'vijayimage'
+        'image_name': 'vijayimage',
         'timeout': 2,
         'dockerfile': 'Dockerfile',
         'jenkins_client_image': 'dockerdaemon0901/jenkinworker:v1',
@@ -88,7 +88,7 @@ pipeline {
     }
 
     agent any
-    
+
     stages {
 
         stage('Return early branch indexing') {
