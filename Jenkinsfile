@@ -109,8 +109,6 @@ spec:
           value: /certs/client
         - name: DOCKER_TLS_VERIFY
           value: 1
-        - name: DOCKER_HOST
-          value: tcp://localhost:2376
       volumeMounts:
         - name: dind-certs
           mountPath: /certs/client
@@ -118,31 +116,6 @@ spec:
           mountPath: /home/jenkins/agent
         - name: logs
           mountPath: /home/jenkins/logs
-    - name: dind
-      image: docker:dind
-      imagePullPolicy: IfNotPresent
-      securityContext:
-        privileged: true
-      resources:
-        requests:
-          ephemeral-storage: "4Gi"
-      env:
-        - name: DOCKER_TLS_CERTDIR
-          value: /certs
-      volumeMounts:
-        - name: dind-storage
-          mountPath: /var/lib/docker
-        - name: dind-certs
-          mountPath: /certs/client
-  volumes:
-    - name: dind-storage
-      emptyDir: {}
-    - name: dind-certs
-      emptyDir: {}
-    - name: logs
-      emptyDir: {}
-    - name: workspace
-      emptyDir: {}
 """
             }
         }
