@@ -1,5 +1,6 @@
 def paramDefaults = [
         'cloud': 'anthos-ci',
+        'image_name': 'vijayimage'
         'timeout': 2,
         'dockerfile': 'Dockerfile',
         'jenkins_client_image': 'dockerdaemon0901/jenkinworker:v1',
@@ -77,71 +78,77 @@ pipeline {
     }
 
     environment {
-        REGISTRY = 'hub.docker.com/dockerdaemon0901'
+        DOCKERHUB_URL = 'hub.docker.com/dockerdaemon0901'
         NSO_VERSION = '5.7.2'
+        CHECKOUT_BRANCH = "${env.CHANGE_BRANCH == null ? env.GIT_BRANCH : env.CHANGE_BRANCH}"
+        BRANCH_TAG = CHECKOUT_BRANCH.replaceAll("[^a-zA-Z0-9-._]+", "_")
+        TEST_TAG = "${env.GIT_COMMIT}"
+        IMAGE_NAME = "${pipelineParams.image_name}"
+        REGISTRY = 'docker.io/'
+
     }
 
-    agent {
+    // agent {
         // docker { image 'dockerdaemon0901/jenkinworker:v1' }
-        kubernetes {
-            cloud "${pipelineParams.cloud}"
-            defaultContainer 'jnlp'
-            yaml """
-apiVersion: v1
-kind: Pod
-spec:
-  containers:
-    - name: jnlp
-      image: ${pipelineParams.jenkins_client_image}
-      imagePullPolicy: IfNotPresent
-      stdin: true
-      tty: true
-      env:
-        - name: JENKINS_AGENT_WORKDIR
-          value: /home/jenkins/agent
-        - name: DOCKER_CERT_PATH
-          value: /certs/client
-        - name: DOCKER_TLS_VERIFY
-          value: 1
-        - name: DOCKER_HOST
-          value: tcp://localhost:2376
-      volumeMounts:
-        - name: dind-certs
-          mountPath: /certs/client
-        - name: workspace
-          mountPath: /home/jenkins/agent
-        - name: logs
-          mountPath: /home/jenkins/logs
-    - name: dind
-      image: docker:dind
-      imagePullPolicy: IfNotPresent
-      securityContext:
-        privileged: true
-      resources:
-        requests:
-          ephemeral-storage: "4Gi"
-      env:
-        - name: DOCKER_TLS_CERTDIR
-          value: /certs
-      volumeMounts:
-        - name: dind-storage
-          mountPath: /var/lib/docker
-        - name: dind-certs
-          mountPath: /certs/client
-  volumes:
-    - name: dind-storage
-      emptyDir: {}
-    - name: dind-certs
-      emptyDir: {}
-    - name: logs
-      emptyDir: {}
-    - name: workspace
-      emptyDir: {}
-"""
-            }
-        }
+//         kubernetes {
+//             cloud "${pipelineParams.cloud}"
+//             defaultContainer 'jnlp'
+//             yaml """
+// apiVersion: v1
+// kind: Pod
+// spec:
+//   containers:
+//     - name: jnlp
+//       image: ${pipelineParams.jenkins_client_image}
+//       imagePullPolicy: IfNotPresent
+//       stdin: true
+//       tty: true
+//       env:
+//         - name: JENKINS_AGENT_WORKDIR
+//           value: /home/jenkins/agent
+//         - name: DOCKER_CERT_PATH
+//           value: /certs/client
+//         - name: DOCKER_TLS_VERIFY
+//           value: 1
+//         - name: DOCKER_HOST
+//           value: tcp://localhost:2376
+//       volumeMounts:
+//         - name: dind-certs
+//           mountPath: /certs/client
+//         - name: workspace
+//           mountPath: /home/jenkins/agent
+//         - name: logs
+//           mountPath: /home/jenkins/logs
+//     - name: dind
+//       image: docker:dind
+//       imagePullPolicy: IfNotPresent
+//       securityContext:
+//         privileged: true
+//       resources:
+//         requests:
+//           ephemeral-storage: "4Gi"
+//       env:
+//         - name: DOCKER_TLS_CERTDIR
+//           value: /certs
+//       volumeMounts:
+//         - name: dind-storage
+//           mountPath: /var/lib/docker
+//         - name: dind-certs
+//           mountPath: /certs/client
+//   volumes:
+//     - name: dind-storage
+//       emptyDir: {}
+//     - name: dind-certs
+//       emptyDir: {}
+//     - name: logs
+//       emptyDir: {}
+//     - name: workspace
+//       emptyDir: {}
+// """
+//             }
+        // }
 
-    // agent any
+    agent any
     stages {
 
         stage('Return early branch indexing') {
@@ -162,81 +169,47 @@ spec:
                 }
         }
 
+        stage('check version'){
+            agent {docker { image 'dockerdaemon0901/jenkinworker:v1' }}
+            steps {
+                sh 'python3 --version'
+            }
+        }
+        
         stage('Build image Kaniko') {
-                agent {
-                    kubernetes {
-                        cloud "${pipelineParams.cloud}"
-                        defaultContainer 'kaniko'
-                        yaml """
-apiVersion: v1
-kind: Pod
-spec:
-  containers:
-    - name: kaniko
-      image: gcr.io/kaniko-project/executor:v1.18.0-debug
-      imagePullPolicy: IfNotPresent
-      command:
-        - /busybox/sleep
-        - infinity
-      tty: true
-      env:
-      volumeMounts:
-        - name: kaniko-secret
-          mountPath: /kaniko/.docker/
-        - name: gittoken
-          mountPath: /kaniko/gittoken
-  volumes:
-    - name: gittoken
-      secret:
-        secretName: github-credentials
-        defaultMode: 384
-    - name: kaniko-secret
-      secret:
-        secretName: docker-credentials
-        defaultMode: 256
-"""
-                    }
-                }
-                steps {
-                    container(name: 'kaniko', shell: '/busybox/sh') {
-                        echo 'Build image'
-                        script {
-                            pipelineParams.target_to_image_suffix.each{target, suffix ->
-                                extra_args = ""
-                                if (target != "") {
-                                    extra_args = extra_args + " --target=${target}"
-                                }
-                                if (pipelineParams.push_dockerhub) {
-                                    extra_args = extra_args + " --destination=$DOCKERHUB_URL/$IMAGE_NAME:$BRANCH_TAG" + suffix
-                                    extra_args = extra_args + " --destination $DOCKERHUB_URL/$IMAGE_NAME:$TEST_TAG" + suffix
-                                }
-
-                                retry(pipelineParams.NUM_BUILD_IMAGES_RETRIES) {
-                                    withEnv(['PATH+EXTRA=/busybox']) {
-                                        sh """#!/busybox/sh
-                                        echo "################################################################################"
-                                        echo "#                         Build Image - Kaniko                                 #"
-                                        echo "################################################################################"
-                                        cp -v /kaniko/gittoken/token /kaniko/token
-                                        chmod -v 777 /kaniko/token
-                                        /kaniko/executor \
-                                            --context `pwd`${pipelineParams.build_dir} \
-                                            --dockerfile ${pipelineParams.dockerfile} \
-                                            --build-arg NSO_VERSION=$NSO_VERSION \
-                                            --cache=${pipelineParams.kaniko_cache} \
-                                            --cache-ttl=4000h \
-                                            --ignore-path=/busybox \
-                                            --snapshot-mode=full \
-                                            --log-format=color \
-                                            && mkdir -p /workspace
-                                        """
-                                    }
-                                }
-                            }
-                        }
-                    }
+            agent {
+                docker {
+                    image 'gcr.io/kaniko-project/executor:v1.18.0-debug'
+                    args '-v /kaniko/.docker/:/kaniko/.docker/ -v /kaniko/gittoken:/kaniko/gittoken'
                 }
             }
+            steps {
+                script {
+                    // Assuming 'pipelineParams' and the necessary environment variables are available
+                    def extraArgs = ""
+                    if (pipelineParams.push_dockerhub) {
+                        extraArgs += " --destination=$DOCKERHUB_URL/$IMAGE_NAME:$BRANCH_TAG"
+                        extraArgs += " --destination $DOCKERHUB_URL/$IMAGE_NAME:$TEST_TAG"
+                    }
+                    sh """
+                    echo "################################################################################"
+                    echo "#                         Build Image - Kaniko                                 #"
+                    echo "################################################################################"
+                    /kaniko/executor \
+                        --context `pwd`${pipelineParams.build_dir} \
+                        --dockerfile ${pipelineParams.dockerfile} \
+                        --destination=$REGISTRY/$IMAGE_NAME:$BRANCH_TAG${suffix} \
+                        --destination $REGISTRY/$IMAGE_NAME:$TEST_TAG${suffix} \
+                        --cache=${pipelineParams.kaniko_cache} \
+                        --cache-ttl=4h \
+                        --ignore-path=/busybox \
+                        --snapshot-mode=full \
+                        --log-format=color \
+                        --push-retry=3 \
+                        --cleanup ${extra_args}
+                    """
+                }
+            }
+        }
     }
-
 }
