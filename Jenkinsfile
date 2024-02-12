@@ -116,7 +116,7 @@ pipeline {
             steps {
                 script {
                     // Print some information about the Docker image
-                    sh 'docker info'
+                    // sh 'docker info'
 
                     // Check Python version
                     sh 'python3 --version'
