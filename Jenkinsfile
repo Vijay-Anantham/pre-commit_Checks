@@ -128,9 +128,8 @@ pipeline {
         // Try building and publishing the image using a kniko container
         stage('Run Command in Kaniko Container') {
             steps {
-                docker.image('gcr.io/kaniko-project/executor:latest').inside("--env DOCKER_CONFIG=/kaniko/.docker") {
-                    // sh "cat ${pipelineParams.dockerfile} | /kaniko/executor --dockerfile=/dev/stdin --context=/workspace --destination=${IMAGE_NAME}"
-                    sh 'echo Heyy'
+                container('kaniko') {
+                    echo 'Hello from the Kaniko container!'
                 }
             }
         }
