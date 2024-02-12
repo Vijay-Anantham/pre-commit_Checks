@@ -8,6 +8,7 @@ pipeline {
         kind: Pod
         metadata:
           name: jnlp-kaniko
+          namespace: default
         spec:
           containers:
             - name: kaniko
