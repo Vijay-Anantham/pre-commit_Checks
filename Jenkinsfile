@@ -2,6 +2,7 @@ def paramDefaults = [
         'cloud': 'anthos-ci',
         'timeout': 2,
         'dockerfile': 'Dockerfile',
+        'jenkins_client_image': 'dockerdaemon0901/jenkinworker:v1',
         'target_to_image_suffix': ['': ''],
         'kaniko_cache': 'true',
         'build_dir': '',
@@ -76,64 +77,82 @@ pipeline {
     }
 
     agent {
-        docker { image 'dockerdaemon0901/jenkinworker:v1' }
-//         kubernetes {
-//                 cloud "${pipelineParams.cloud}"
-//                 defaultContainer 'jnlp'
-//                 yaml """
-// apiVersion: v1
-// kind: Pod
-// spec:
-//   serviceAccountName: devx-sa
-//   containers:
-//     - name: jnlp
-//       image: dockerdaemon0901/jenkinworker:v1
-//       imagePullPolicy: IfNotPresent
-//       stdin: true
-//       tty: true
-//       env:
-//         - name: JENKINS_AGENT_WORKDIR
-//           value: /home/jenkins/agent
-//         - name: DOCKER_CERT_PATH
-//           value: /certs/client
-//         - name: DOCKER_TLS_VERIFY
-//           value: 1
-//         - name: DOCKER_HOST
-//           value: tcp://localhost:2376
-//       volumeMounts:
-//         - name: dind-certs
-//           mountPath: /certs/client
-//         - name: workspace
-//           mountPath: /home/jenkins/agent
-//         - name: logs
-//           mountPath: /home/jenkins/logs
-//     - name: dind
-//       image: docker:dind
-//       imagePullPolicy: IfNotPresent
-//       securityContext:
-//         privileged: true
-//       resources:
-//         requests:
-//           ephemeral-storage: "4Gi"
-//       env:
-//         - name: DOCKER_TLS_CERTDIR
-//           value: /certs
-//       volumeMounts:
-//         - name: dind-storage
-//           mountPath: /var/lib/docker
-//         - name: dind-certs
-//           mountPath: /certs/client
-//   volumes:
-//     - name: dind-storage
-//       emptyDir: {}
-//     - name: dind-certs
-//       emptyDir: {}
-//     - name: logs
-//       emptyDir: {}
-//     - name: workspace
-//       emptyDir: {}
-// """
-            // }
+        // docker { image 'dockerdaemon0901/jenkinworker:v1' }
+        kubernetes {
+            cloud "${pipelineParams.cloud}"
+            defaultContainer 'jnlp'
+            yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  serviceAccountName: laasv2-e2e
+  containers:
+    - name: jnlp
+      image: ${pipelineParams.jenkins_client_image}
+      imagePullPolicy: IfNotPresent
+      stdin: true
+      tty: true
+      env:
+        - name: JENKINS_AGENT_WORKDIR
+          value: /home/jenkins/agent
+        - name: DOCKER_CERT_PATH
+          value: /certs/client
+        - name: DOCKER_TLS_VERIFY
+          value: 1
+        - name: DOCKER_HOST
+          value: tcp://localhost:2376
+        - name: GEN_USER
+          valueFrom:
+            secretKeyRef:
+              name: dockerhub
+              key: username
+        - name: GEN_PASS
+          valueFrom:
+            secretKeyRef:
+              name: dockerhub
+              key: password
+      volumeMounts:
+        - name: dind-certs
+          mountPath: /certs/client
+        - name: workspace
+          mountPath: /home/jenkins/agent
+        - name: logs
+          mountPath: /home/jenkins/logs
+    - name: dind
+      image: dockerhub.cisco.com/docker.io/docker:24.0.6-dind
+      imagePullPolicy: IfNotPresent
+      securityContext:
+        privileged: true
+      resources:
+        requests:
+          ephemeral-storage: "4Gi"
+      env:
+        - name: DOCKER_TLS_CERTDIR
+          value: /certs
+      volumeMounts:
+        - name: dind-storage
+          mountPath: /var/lib/docker
+        - name: dind-certs
+          mountPath: /certs/client
+  volumes:
+    - name: dind-storage
+      emptyDir: {}
+    - name: dind-certs
+      emptyDir: {}
+    - name: logs
+      emptyDir: {}
+    - name: workspace
+      emptyDir: {}
+    - name: gittoken
+      secret:
+        secretName: github-credentials
+        defaultMode: 384
+    - name: kaniko-secret
+      secret:
+        secretName: dockerhub-credentials
+        defaultMode: 384
+"""
+            }
         }
 
     // agent any
