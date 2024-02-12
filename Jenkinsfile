@@ -105,16 +105,6 @@ spec:
           value: 1
         - name: DOCKER_HOST
           value: tcp://localhost:2376
-        - name: GEN_USER
-          valueFrom:
-            secretKeyRef:
-              name: docker-credentials
-              key: username
-        - name: GEN_PASS
-          valueFrom:
-            secretKeyRef:
-              name: docker-credentials
-              key: password
       volumeMounts:
         - name: dind-certs
           mountPath: /certs/client
@@ -147,14 +137,6 @@ spec:
       emptyDir: {}
     - name: workspace
       emptyDir: {}
-    - name: gittoken
-      secret:
-        secretName: github-credentials
-        defaultMode: 384
-    - name: kaniko-secret
-      secret:
-        secretName: docker-credentials
-        defaultMode: 384
 """
             }
         }
