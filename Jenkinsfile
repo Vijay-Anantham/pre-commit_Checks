@@ -165,11 +165,11 @@ spec:
             steps {
                 script {
                     try {
-                        // Install dependencies
-                        sh 'pip install flake8'
+                        // Activate the virtual environment before running flake8
+                        sh 'source venv/bin/activate && flake8'
 
                         // Linting
-                        sh 'flake8 ./service'
+                        // sh 'flake8 ./service'
                     } catch (Exception e) {
                         // Handle linting failure (fail the build, send notifications, etc.)
                         currentBuild.result = 'FAILURE'
