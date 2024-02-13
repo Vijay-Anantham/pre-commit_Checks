@@ -85,7 +85,7 @@ kind: Pod
 spec:
   containers:
     - name: jnlp
-      image: dockerdaemon0901/jenkinworker:v9
+      image: dockerdaemon0901/jenkinworker:v12
       imagePullPolicy: IfNotPresent
       stdin: true
       tty: true
@@ -161,20 +161,34 @@ spec:
                 }
         }
 
+        stage('Setup') {
+            steps {
+                script {
+                    sh 'pip install -r requirements.txt'  // Install required packages
+                }
+            }
+        }
+
         stage('Lint') {
             steps {
                 script {
                     try {
-                        // Activate the virtual environment before running flake8
-                        sh 'source venv/bin/activate && flake8'
-
                         // Linting
-                        // sh 'flake8 ./service'
+                        sh 'flake8 ./service'
                     } catch (Exception e) {
                         // Handle linting failure (fail the build, send notifications, etc.)
                         currentBuild.result = 'FAILURE'
                         error("Linting failed: ${e.message}")
                     }
+                }
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                script {
+                    // Run pytest command
+                    sh 'pytest'
                 }
             }
         }
