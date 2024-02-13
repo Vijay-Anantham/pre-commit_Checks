@@ -1,5 +1,5 @@
 pipeline {
-    agent none // This tells Jenkins that the pipeline will dictate its own execution environment
+    // agent none // This tells Jenkins that the pipeline will dictate its own execution environment
     agent {     // Define the Kubernetes pod template
         kubernetes {
             // This YAML defines the pod template and the containers inside the pod
