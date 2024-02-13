@@ -1,13 +1,9 @@
 pipeline {
     agent none // This tells Jenkins that the pipeline will dictate its own execution environment
-
-    stages {
-        stage('Deploy Pod') {
-            agent {
-                // Define the Kubernetes pod template
-                kubernetes {
-                    // This YAML defines the pod template and the containers inside the pod
-                    yaml '''
+    agent {     // Define the Kubernetes pod template
+        kubernetes {
+            // This YAML defines the pod template and the containers inside the pod
+            yaml '''
 apiVersion: v1
 kind: Pod
 metadata:
@@ -21,11 +17,14 @@ spec:
     - cat
     tty: true
 '''
-                }
-            }
+        }
+    }
+    stages {
+        stage('Deploy Pod') {
+            
             steps {
                 // Execute your scripts/commands here inside the pod
-                container('my-container') {
+                container('demo-container') {
                     sh 'echo "Running script inside the pod"'
                     // Add more shell commands or script executions here
                 }
