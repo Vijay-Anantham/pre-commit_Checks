@@ -141,7 +141,7 @@ spec:
 """
             }
         }
-    // agent any
+    // Step to skip triggering of build if there arent any code changes
     stages {
         stage('Return early branch indexing') {
                 when {
@@ -160,7 +160,7 @@ spec:
                     }
                 }
         }
-
+        // Setup for building environment
         stage('Setup') {
             steps {
                 script {
@@ -168,7 +168,7 @@ spec:
                 }
             }
         }
-
+        // Second layer Lint checks enforcing before merge..
         stage('Lint') {
             steps {
                 script {
@@ -183,7 +183,7 @@ spec:
                 }
             }
         }
-
+        // Run tests across all dir and files
         stage('Run Tests') {
             steps {
                 script {
@@ -192,5 +192,6 @@ spec:
                 }
             }
         }
+        // Build and publish
     }
 }
