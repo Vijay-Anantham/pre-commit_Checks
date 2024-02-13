@@ -85,7 +85,7 @@ kind: Pod
 spec:
   containers:
     - name: jnlp
-      image: dockerdaemon0901/jenkinworker:v1
+      image: dockerdaemon0901/jenkinworker:v9
       imagePullPolicy: IfNotPresent
       stdin: true
       tty: true
