@@ -79,8 +79,10 @@ pipeline {
     environment{
         CHECKOUT_BRANCH = "${env.CHANGE_BRANCH == null ? env.GIT_BRANCH : env.CHANGE_BRANCH}"
         DOCKERHUB_URL = 'docker.io/dockerdaemon0901'
-        BRANCH_TAG = CHECKOUT_BRANCH.replaceAll("[^a-zA-Z0-9-._]+", "_")
+        // BRANCH_TAG = CHECKOUT_BRANCH.replaceAll("[^a-zA-Z0-9-._]+", "_")
+        BRANCH_TAG = 'v0.0.1'
         REGISTRY = 'docker.io/dockerdaemon0901'
+        // REGISTRY = 'containers.cisco.com/vijaysek'
         IMAGE_NAME = "${pipelineParams.image_name}"
         TEST_TAG = "${env.GIT_COMMIT}"
         IMAGE_TAG = "${TEST_TAG}"
@@ -261,7 +263,7 @@ spec:
         defaultMode: 384
     - name: kaniko-secret
       secret:
-        secretName: kanikoharbor
+        secretName: kanikoharbour
         defaultMode: 256
 """
                     }
@@ -294,13 +296,12 @@ spec:
                                             --build-arg REGISTRY=$REGISTRY \
                                             --build-arg NSO_VERSION=$NSO_VERSION \
                                             --cache=${pipelineParams.kaniko_cache} \
-                                            --cache-ttl=4000h \
+                                            --cache-ttl=1h \
                                             --ignore-path=/busybox \
                                             --snapshot-mode=full \
                                             --log-format=color \
                                             --push-retry=3 \
                                             --destination=$REGISTRY/$IMAGE_NAME:$BRANCH_TAG${suffix} \
-                                            --destination $REGISTRY/$IMAGE_NAME:$TEST_TAG${suffix} \
                                             --cleanup ${extra_args} \
                                             && mkdir -p /workspace
                                         """
