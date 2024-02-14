@@ -29,7 +29,7 @@ RUN pip install pytest flake8
 # RUN curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh
 
 # If you need to install Docker (to run Docker commands within this agent, which requires Docker-out-of-Docker setup):
-# RUN curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh
+RUN curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh
 
 # # Drop back to the Jenkins user
 # USER jenkins
