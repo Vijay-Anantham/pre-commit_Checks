@@ -78,10 +78,10 @@ pipeline {
 
     environment{
         CHECKOUT_BRANCH = "${env.CHANGE_BRANCH == null ? env.GIT_BRANCH : env.CHANGE_BRANCH}"
-        DOCKERHUB_URL = 'docker.io/dockerdaemon0901'
+        DOCKERHUB_URL = 'dockerdaemon0901'
         // BRANCH_TAG = CHECKOUT_BRANCH.replaceAll("[^a-zA-Z0-9-._]+", "_")
-        BRANCH_TAG = 'v0.0.1'
-        REGISTRY = 'docker.io/dockerdaemon0901'
+        BRANCH_TAG = 'v0.1.1'
+        REGISTRY = 'dockerdaemon0901'
         // REGISTRY = 'containers.cisco.com/vijaysek'
         IMAGE_NAME = "${pipelineParams.image_name}"
         TEST_TAG = "${env.GIT_COMMIT}"
@@ -252,7 +252,7 @@ spec:
       tty: true
       env:
       volumeMounts:
-        - name: kaniko-secret
+        - name: jenkins-docker-cfg
           mountPath: /kaniko/.docker/
         - name: gittoken
           mountPath: /kaniko/gittoken
@@ -261,10 +261,14 @@ spec:
       secret:
         secretName: gittoken
         defaultMode: 384
-    - name: kaniko-secret
-      secret:
-        secretName: kanikoharbour
-        defaultMode: 256
+    - name: jenkins-docker-cfg
+      projected:
+        sources:
+        - secret:
+            name: docker-credentials
+            items:
+              - key: .dockerconfigjson
+              path: config.json
 """
                     }
                 }
