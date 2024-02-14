@@ -1,5 +1,6 @@
 def paramDefaults = [
-        'cloud': 'anthos-devx-ci',
+        'cloud': 'anthos-ci',
+        'image_name': 'vijayimage',
         'timeout': 2,
         'dockerfile': 'Dockerfile',
         'target_to_image_suffix': ['': ''],
@@ -75,13 +76,98 @@ pipeline {
             timeout(time: pipelineParams.timeout, unit: 'HOURS')
     }
 
-    agent {
-        docker { image 'dockerdaemon0901/jenkinworker:v1' }
+    environment{
+        CHECKOUT_BRANCH = "${env.CHANGE_BRANCH == null ? env.GIT_BRANCH : env.CHANGE_BRANCH}"
+        DOCKERHUB_URL = 'dockerdaemon0901'
+        // BRANCH_TAG = CHECKOUT_BRANCH.replaceAll("[^a-zA-Z0-9-._]+", "_")
+        BRANCH_TAG = 'v0.1.1'
+        REGISTRY = 'dockerdaemon0901'
+        // REGISTRY = 'containers.cisco.com/vijaysek'
+        IMAGE_NAME = "${pipelineParams.image_name}"
+        TEST_TAG = "${env.GIT_COMMIT}"
+        IMAGE_TAG = "${TEST_TAG}"
+        NSO_VERSION = '5.7.2'
     }
 
-    // agent any
+    agent {
+        // docker { image 'dockerdaemon0901/jenkinworker:v1' }
+        kubernetes {
+                cloud "${pipelineParams.cloud}"
+                defaultContainer 'jnlp'
+                yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+    - name: jnlp
+      image: dockerdaemon0901/jenkinworker:v13
+      imagePullPolicy: IfNotPresent
+      stdin: true
+      tty: true
+      env:
+        - name: JENKINS_AGENT_WORKDIR
+          value: /home/jenkins/agent
+        - name: DOCKER_CERT_PATH
+          value: /certs/client
+        - name: DOCKER_TLS_VERIFY
+          value: 1
+        - name: DOCKER_HOST
+          value: tcp://localhost:2376
+        - name: GEN_USER
+          valueFrom:
+            secretKeyRef:
+              name: dockerhub
+              key: username
+        - name: GEN_PASS
+          valueFrom:
+            secretKeyRef:
+              name: dockerhub
+              key: password
+      volumeMounts:
+        - name: dind-certs
+          mountPath: /certs/client
+        - name: workspace
+          mountPath: /home/jenkins/agent
+        - name: logs
+          mountPath: /home/jenkins/logs
+    - name: dind
+      image: docker:dind
+      imagePullPolicy: IfNotPresent
+      securityContext:
+        privileged: true
+      resources:
+        requests:
+          ephemeral-storage: "4Gi"
+      env:
+        - name: DOCKER_TLS_CERTDIR
+          value: /certs
+      volumeMounts:
+        - name: dind-storage
+          mountPath: /var/lib/docker
+        - name: dind-certs
+          mountPath: /certs/client
+  volumes:
+    - name: dind-storage
+      emptyDir: {}
+    - name: dind-certs
+      emptyDir: {}
+    - name: logs
+      emptyDir: {}
+    - name: workspace
+      emptyDir: {}
+    - name: gittoken
+      secret:
+        secretName: gittoken
+        defaultMode: 384
+    - name: kaniko-secret
+      secret:
+        secretName: kanikoharbour
+        defaultMode: 384
+"""
+            }
+        }
+    // Step to skip triggering of build if there arent any code changes
     stages {
-
         stage('Return early branch indexing') {
                 when {
                     allOf {
@@ -99,12 +185,137 @@ pipeline {
                     }
                 }
         }
-
-        stage('Check version') {
+        // Setup for building environment
+        stage('Setup') {
             steps {
-                sh 'python3 --version'
+                script {
+                    sh 'pip install -r requirements.txt'  // Install required packages
+                }
             }
         }
-    }
+        // Second layer Lint checks enforcing before merge..
+        stage('Lint') {
+            steps {
+                script {
+                    try {
+                        // Linting
+                        sh 'flake8 ./service'
+                    } catch (Exception e) {
+                        // Handle linting failure (fail the build, send notifications, etc.)
+                        currentBuild.result = 'FAILURE'
+                        error("Linting failed: ${e.message}")
+                    }
+                }
+            }
+        }
+        // Run tests across all dir and files
+        // stage('Run Tests') {
+        //     steps {
+        //         try {
+        //             // Linting
+        //             sh 'pytest'
+        //         } catch (Exception e) {
+        //             // Handle linting failure (fail the build, send notifications, etc.)
+        //             currentBuild.result = 'FAILURE'
+        //             error("Linting failed: ${e.message}")
+        //         }
+        //     }
+        // }
 
+        stage('Repo login') {
+            steps {
+                script {
+                    if (pipelineParams.push_dockerhub) {
+                        sh 'echo $GEN_PASS | docker login dockerhub.com --username $GEN_USER --password-stdin'
+                    }
+                }
+            }
+        }
+
+        // Build and publish
+        stage('Build image Kaniko') {
+                agent {
+                    kubernetes {
+                        cloud "${pipelineParams.cloud}"
+                        defaultContainer 'kaniko'
+                        yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+    - name: kaniko
+      image: gcr.io/kaniko-project/executor:v1.18.0-debug
+      imagePullPolicy: IfNotPresent
+      command:
+        - /busybox/sleep
+        - infinity
+      tty: true
+      env:
+      volumeMounts:
+        - name: jenkins-docker-cfg
+          mountPath: /kaniko/.docker/
+        - name: gittoken
+          mountPath: /kaniko/gittoken
+  volumes:
+    - name: gittoken
+      secret:
+        secretName: gittoken
+        defaultMode: 384
+    - name: jenkins-docker-cfg
+      projected:
+        sources:
+        - secret:
+            name: docker-credentials
+            items:
+              - key: .dockerconfigjson
+                path: config.json
+"""
+                    }
+                }
+                steps {
+                    container(name: 'kaniko', shell: '/busybox/sh') {
+                        echo 'Build image'
+                        script {
+                            pipelineParams.target_to_image_suffix.each{target, suffix ->
+                                extra_args = ""
+                                if (target != "") {
+                                    extra_args = extra_args + " --target=${target}"
+                                }
+                                if (pipelineParams.push_dockerhub) {
+                                    extra_args = extra_args + " --destination=$DOCKERHUB_URL/$IMAGE_NAME:$BRANCH_TAG" + suffix
+                                    extra_args = extra_args + " --destination $DOCKERHUB_URL/$IMAGE_NAME:$TEST_TAG" + suffix
+                                }
+
+                                retry(pipelineParams.NUM_BUILD_IMAGES_RETRIES) {
+                                    withEnv(['PATH+EXTRA=/busybox']) {
+                                        sh """#!/busybox/sh
+                                        echo "################################################################################"
+                                        echo "#                         Build Image - Kaniko                                 #"
+                                        echo "################################################################################"
+                                        cp -v /kaniko/gittoken/token /kaniko/token
+                                        chmod -v 777 /kaniko/token
+                                        /kaniko/executor \
+                                            --context `pwd`${pipelineParams.build_dir} \
+                                            --dockerfile ${pipelineParams.dockerfile} \
+                                            --build-arg REGISTRY=$REGISTRY \
+                                            --build-arg NSO_VERSION=$NSO_VERSION \
+                                            --cache=${pipelineParams.kaniko_cache} \
+                                            --cache-ttl=1h \
+                                            --ignore-path=/busybox \
+                                            --snapshot-mode=full \
+                                            --log-format=color \
+                                            --push-retry=3 \
+                                            --destination=$REGISTRY/$IMAGE_NAME:$BRANCH_TAG${suffix} \
+                                            --cleanup ${extra_args} \
+                                            && mkdir -p /workspace
+                                        """
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+    }
 }

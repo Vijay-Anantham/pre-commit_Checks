@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-linux-pod
+  namespace: default
+spec:
+  containers:
+  - name: linux-container
+    image: alpine:latest
+    command: [ "/bin/sh", "-c", "while true; do echo 'Hello, Kubernetes!'; sleep 1; done" ]
