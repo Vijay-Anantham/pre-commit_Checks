@@ -80,7 +80,7 @@ pipeline {
         CHECKOUT_BRANCH = "${env.CHANGE_BRANCH == null ? env.GIT_BRANCH : env.CHANGE_BRANCH}"
         DOCKERHUB_URL = 'docker.io/dockerdaemon0901'
         BRANCH_TAG = CHECKOUT_BRANCH.replaceAll("[^a-zA-Z0-9-._]+", "_")
-        REGISTRY = 'docker.io'
+        REGISTRY = 'docker.io/dockerdaemon0901'
         IMAGE_NAME = "${pipelineParams.image_name}"
         TEST_TAG = "${env.GIT_COMMIT}"
         IMAGE_TAG = "${TEST_TAG}"
