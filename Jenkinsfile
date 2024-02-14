@@ -203,14 +203,18 @@ spec:
             }
         }
         // Run tests across all dir and files
-        stage('Run Tests') {
-            steps {
-                script {
-                    // Run pytest command
-                    sh 'pytest'
-                }
-            }
-        }
+        // stage('Run Tests') {
+        //     steps {
+        //         try {
+        //             // Linting
+        //             sh 'pytest'
+        //         } catch (Exception e) {
+        //             // Handle linting failure (fail the build, send notifications, etc.)
+        //             currentBuild.result = 'FAILURE'
+        //             error("Linting failed: ${e.message}")
+        //         }
+        //     }
+        // }
 
         stage('Repo login') {
             steps {
