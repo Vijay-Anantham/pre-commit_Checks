@@ -74,6 +74,15 @@ pipeline {
             ansiColor('xterm')
             timeout(time: pipelineParams.timeout, unit: 'HOURS')
     }
+
+    environment{
+
+        REGISTRY = 'docker.io'
+        IMAGE_NAME = "${pipelineParams.image_name}"
+        IMAGE_TAG = "${TEST_TAG}"
+        NSO_VERSION = '5.7.2'
+    }
+
     agent {
         // docker { image 'dockerdaemon0901/jenkinworker:v1' }
         kubernetes {
@@ -85,7 +94,7 @@ kind: Pod
 spec:
   containers:
     - name: jnlp
-      image: dockerdaemon0901/jenkinworker:v12
+      image: dockerdaemon0901/jenkinworker:v13
       imagePullPolicy: IfNotPresent
       stdin: true
       tty: true
@@ -207,8 +216,7 @@ spec:
             steps {
                 script {
                     if (pipelineParams.push_dockerhub) {
-                        sh 'echo $GEN_PASS | docker login dockerhub.cisco.com --username $GEN_USER --password-stdin'
-                        sh 'echo $GEN_PASS | docker login dockerhub-master.cisco.com --username $GEN_USER --password-stdin'
+                        sh 'echo $GEN_PASS | docker login dockerhub.com --username $GEN_USER --password-stdin'
                     }
                 }
             }
@@ -224,7 +232,6 @@ spec:
 apiVersion: v1
 kind: Pod
 spec:
-  serviceAccountName: laasv2-e2e
   containers:
     - name: kaniko
       image: gcr.io/kaniko-project/executor:v1.18.0-debug
@@ -276,10 +283,6 @@ spec:
                                         /kaniko/executor \
                                             --context `pwd`${pipelineParams.build_dir} \
                                             --dockerfile ${pipelineParams.dockerfile} \
-                                            --build-arg http_proxy=$HTTP_PROXY \
-                                            --build-arg https_proxy=$HTTPS_PROXY \
-                                            --build-arg no_proxy=$NO_PROXY \
-                                            --build-arg MIRROR_URL=$MIRROR_URL \
                                             --build-arg REGISTRY=$REGISTRY \
                                             --build-arg NSO_VERSION=$NSO_VERSION \
                                             --cache=${pipelineParams.kaniko_cache} \
