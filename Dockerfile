@@ -8,7 +8,6 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     curl \
     vim \
-    openjdk-8-jdk \
     pip \
     python3
 

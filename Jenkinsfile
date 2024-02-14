@@ -98,6 +98,16 @@ spec:
           value: 1
         - name: DOCKER_HOST
           value: tcp://localhost:2376
+        - name: GEN_USER
+          valueFrom:
+            secretKeyRef:
+              name: dockerhub
+              key: username
+        - name: GEN_PASS
+          valueFrom:
+            secretKeyRef:
+              name: dockerhub
+              key: password
       volumeMounts:
         - name: dind-certs
           mountPath: /certs/client
@@ -192,6 +202,104 @@ spec:
                 }
             }
         }
+
+        stage('Repo login') {
+            steps {
+                script {
+                    if (pipelineParams.push_dockerhub) {
+                        sh 'echo $GEN_PASS | docker login dockerhub.cisco.com --username $GEN_USER --password-stdin'
+                        sh 'echo $GEN_PASS | docker login dockerhub-master.cisco.com --username $GEN_USER --password-stdin'
+                    }
+                }
+            }
+        }
+
         // Build and publish
+        stage('Build image Kaniko') {
+                agent {
+                    kubernetes {
+                        cloud "${pipelineParams.cloud}"
+                        defaultContainer 'kaniko'
+                        yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  serviceAccountName: laasv2-e2e
+  containers:
+    - name: kaniko
+      image: gcr.io/kaniko-project/executor:v1.18.0-debug
+      imagePullPolicy: IfNotPresent
+      command:
+        - /busybox/sleep
+        - infinity
+      tty: true
+      env:
+      volumeMounts:
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker/
+        - name: gittoken
+          mountPath: /kaniko/gittoken
+  volumes:
+    - name: gittoken
+      secret:
+        secretName: gittoken
+        defaultMode: 384
+    - name: kaniko-secret
+      secret:
+        secretName: kanikoharbor
+        defaultMode: 256
+"""
+                    }
+                }
+                steps {
+                    container(name: 'kaniko', shell: '/busybox/sh') {
+                        echo 'Build image'
+                        script {
+                            pipelineParams.target_to_image_suffix.each{target, suffix ->
+                                extra_args = ""
+                                if (target != "") {
+                                    extra_args = extra_args + " --target=${target}"
+                                }
+                                if (pipelineParams.push_dockerhub) {
+                                    extra_args = extra_args + " --destination=$DOCKERHUB_URL/$IMAGE_NAME:$BRANCH_TAG" + suffix
+                                    extra_args = extra_args + " --destination $DOCKERHUB_URL/$IMAGE_NAME:$TEST_TAG" + suffix
+                                }
+
+                                retry(pipelineParams.NUM_BUILD_IMAGES_RETRIES) {
+                                    withEnv(['PATH+EXTRA=/busybox']) {
+                                        sh """#!/busybox/sh
+                                        echo "################################################################################"
+                                        echo "#                         Build Image - Kaniko                                 #"
+                                        echo "################################################################################"
+                                        cp -v /kaniko/gittoken/token /kaniko/token
+                                        chmod -v 777 /kaniko/token
+                                        /kaniko/executor \
+                                            --context `pwd`${pipelineParams.build_dir} \
+                                            --dockerfile ${pipelineParams.dockerfile} \
+                                            --build-arg http_proxy=$HTTP_PROXY \
+                                            --build-arg https_proxy=$HTTPS_PROXY \
+                                            --build-arg no_proxy=$NO_PROXY \
+                                            --build-arg MIRROR_URL=$MIRROR_URL \
+                                            --build-arg REGISTRY=$REGISTRY \
+                                            --build-arg NSO_VERSION=$NSO_VERSION \
+                                            --cache=${pipelineParams.kaniko_cache} \
+                                            --cache-ttl=4000h \
+                                            --ignore-path=/busybox \
+                                            --snapshot-mode=full \
+                                            --log-format=color \
+                                            --push-retry=3 \
+                                            --destination=$REGISTRY/$IMAGE_NAME:$BRANCH_TAG${suffix} \
+                                            --destination $REGISTRY/$IMAGE_NAME:$TEST_TAG${suffix} \
+                                            --cleanup ${extra_args} \
+                                            && mkdir -p /workspace
+                                        """
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
     }
 }
