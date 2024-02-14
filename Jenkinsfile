@@ -1,5 +1,6 @@
 def paramDefaults = [
         'cloud': 'anthos-ci',
+        'image_name': 'vijayimage'
         'timeout': 2,
         'dockerfile': 'Dockerfile',
         'target_to_image_suffix': ['': ''],
@@ -77,6 +78,7 @@ pipeline {
 
     environment{
         CHECKOUT_BRANCH = "${env.CHANGE_BRANCH == null ? env.GIT_BRANCH : env.CHANGE_BRANCH}"
+        DOCKERHUB_URL = 'docker.io'
         BRANCH_TAG = CHECKOUT_BRANCH.replaceAll("[^a-zA-Z0-9-._]+", "_")
         REGISTRY = 'docker.io'
         IMAGE_NAME = "${pipelineParams.image_name}"
