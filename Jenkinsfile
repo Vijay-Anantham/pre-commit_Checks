@@ -80,6 +80,7 @@ pipeline {
         BRANCH_TAG = CHECKOUT_BRANCH.replaceAll("[^a-zA-Z0-9-._]+", "_")
         REGISTRY = 'docker.io'
         IMAGE_NAME = "${pipelineParams.image_name}"
+        TEST_TAG = "${env.GIT_COMMIT}"
         IMAGE_TAG = "${TEST_TAG}"
         NSO_VERSION = '5.7.2'
     }
