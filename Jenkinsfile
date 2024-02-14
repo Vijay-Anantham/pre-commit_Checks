@@ -159,7 +159,7 @@ spec:
         defaultMode: 384
     - name: kaniko-secret
       secret:
-        secretName: kanikoharbor
+        secretName: kanikoharbour
         defaultMode: 384
 """
             }
