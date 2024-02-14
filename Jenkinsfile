@@ -76,7 +76,8 @@ pipeline {
     }
 
     environment{
-
+        CHECKOUT_BRANCH = "${env.CHANGE_BRANCH == null ? env.GIT_BRANCH : env.CHANGE_BRANCH}"
+        BRANCH_TAG = CHECKOUT_BRANCH.replaceAll("[^a-zA-Z0-9-._]+", "_")
         REGISTRY = 'docker.io'
         IMAGE_NAME = "${pipelineParams.image_name}"
         IMAGE_TAG = "${TEST_TAG}"
