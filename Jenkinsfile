@@ -1,6 +1,6 @@
 def paramDefaults = [
         'cloud': 'anthos-ci',
-        'image_name': 'vijayimage'
+        'image_name': 'vijayimage',
         'timeout': 2,
         'dockerfile': 'Dockerfile',
         'target_to_image_suffix': ['': ''],
